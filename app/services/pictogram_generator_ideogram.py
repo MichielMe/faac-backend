@@ -1,17 +1,15 @@
-import base64
 import os
 from io import BytesIO
 from pathlib import Path
 
-from fastapi.responses import FileResponse
-from google import genai
-from google.genai import types
+import requests
+from fastapi.responses import JSONResponse
 from loguru import logger
 from PIL import Image
 
 from app.core import settings
 
-api_key = settings.GOOGLE_API_KEY
+api_key = settings.IDEOGRAM_API_KEY
 pictogram_dir = Path("app/assets/pictograms")
 
 
@@ -39,6 +37,13 @@ SYSTEM_PROMPT = (
     "- Design with visual hierarchy - make the most important elements larger or more central\n"
     "- Maintain consistent visual weight and balance across the image\n"
     "- Use color purposefully to distinguish elements and enhance understanding\n\n"
+    "DARK MODE COMPATIBILITY:\n"
+    "- Use lighter, brighter colors that will stand out against dark backgrounds\n"
+    "- Add thin white or light-colored outlines (1-2px) to elements when needed for visibility\n"
+    "- Avoid very dark colors that would blend into dark backgrounds\n"
+    "- Test visual contrast against both light and dark backgrounds\n"
+    "- Maintain clarity and visibility when viewed in low-light environments\n\n"
+    "- Use a 100% TRANSPARENT BACKGROUND with NO BORDERS, NO FRAMES, NO UI ELEMENTS\n\n"
     "ADAPTABILITY CONSIDERATIONS:\n"
     "- Design for clarity in both color and potential monochrome/high-contrast viewing\n"
     "- Ensure the symbol works well for users with different visual acuity levels\n"
@@ -58,13 +63,15 @@ SYSTEM_PROMPT_2 = (
     "- Create a 512x512 pixel image with the pictogram centered\n"
     "- Use consistent line weights: 3-4 points for main outlines, 2 points for interior details\n"
     "- Maintain a minimum 7:1 contrast ratio between elements\n"
-    "- Limit to 3-5 colors maximum with strong visual differentiation\n\n"
+    "- Limit to 3-5 colors maximum with strong visual differentiation\n"
+    "- Optimize for dark mode: use lighter colors and add thin light outlines where needed\n\n"
     "VISUAL STYLE FOR AAC PICTOGRAMS:\n"
     "- Create clean, simple, iconic representations using basic shapes\n"
     "- For 'come here': show a single figure with arm extended, using a clear beckoning gesture\n"
     "- Use bold, smooth lines with rounded corners and minimal detail\n"
     "- Apply flat coloring with no gradients, shadows, or 3D effects\n"
-    "- Ensure the symbol is instantly recognizable from a distance and at smaller sizes\n\n"
+    "- Ensure the symbol is instantly recognizable from a distance and at smaller sizes\n"
+    "- Use colors that stand out against dark backgrounds\n\n"
     "CONCEPTUAL CLARITY:\n"
     "- Focus on universal, culturally-neutral representations when possible\n"
     "- For action words (like 'come here'), use clear gestural representation\n"
@@ -74,46 +81,98 @@ SYSTEM_PROMPT_2 = (
 )
 
 
-def generate_pictogram(keyword, output_filename=None):
-    # Set the output filename to include the keyword if not provided
-    if output_filename is None:
-        output_filename = f"pic_{keyword}.png"
+def generate_pictogram_ideogram(
+    keyword,
+    output_filename=None,
+):
+    """
+    Generate one or more pictograms for a given keyword.
 
-    # Initialize the Google GenAI client with API key
-    client = genai.Client(api_key=api_key)
+    Args:
+        keyword: The word or phrase to generate a pictogram for
+        output_filename: Optional custom filename
+        generate_multiple: Whether to generate multiple variations
+        num_images: Number of images to generate when generate_multiple is True
 
+    Returns:
+        JSONResponse with success status and paths to generated images
+    """
+    url = "https://api.ideogram.ai/generate"
+    headers = {
+        "Api-Key": api_key,
+        "Content-Type": "application/json",
+    }
     # Create the complete prompt for image generation
-    prompt = f"{SYSTEM_PROMPT}\n\nCreate a professional '{keyword}' pictogram that would work well in an AAC system. ONLY the pictogram itself with transparent background. NO borders, frames, or lines below the image."
+    prompt = f"KEYWORD IS {keyword.upper()}\n\n{SYSTEM_PROMPT}\n\nCreate a professional '{keyword}' pictogram that would work well in an AAC system. ONLY the pictogram itself with transparent background. NO borders, frames, or lines below the image. Optimize for dark mode with lighter colors that stand out against dark backgrounds."
+
+    json = {
+        "image_request": {
+            "prompt": prompt,
+            "aspect_ratio": "ASPECT_1_1",
+            "magic_prompt_option": "ON",
+            "style_type": "DESIGN",
+            "num_images": 4,
+            "model": "V_2",
+        }
+    }
 
     try:
-        # Generate the image using Gemini instead of Imagen (which requires billing)
-        response = client.models.generate_content(
-            model="gemini-2.0-flash-exp-image-generation",
-            contents=prompt,
-            config=types.GenerateContentConfig(response_modalities=["Text", "Image"]),
-        )
+        logger.info(f"Sending request to Ideogram: {json}")
+        response = requests.post(url, headers=headers, json=json)
+        response.raise_for_status()
+        data = response.json()
+        logger.info(f"Response: {data}")
 
-        # Process and save the generated image
-        for part in response.candidates[0].content.parts:
-            if part.inline_data is not None and part.inline_data.mime_type.startswith(
-                "image/"
-            ):
-                # Extract the image data
-                image_data = part.inline_data.data
-                image = Image.open(BytesIO(image_data))
+        # download the images
+        # Extract image URLs from response
+        image_urls = [img["url"] for img in data["data"]]
+        logger.info(f"Image URLs: {image_urls}")
+        generated_files = []
 
-                # Ensure the image has an alpha channel for transparency
-                if image.mode != "RGBA":
-                    image = image.convert("RGBA")
+        # Download and save each image
+        for i, url in enumerate(image_urls, start=1):
+            try:
+                # Generate current filename for this iteration
+                current_filename = output_filename
 
-                # Save the image
-                image.save(pictogram_dir / output_filename)
-                logger.info(f"Pictogram for '{keyword}' saved as '{output_filename}'.")
-                return FileResponse(pictogram_dir / output_filename)
+                # Generate output filename if not provided
+                if not current_filename:
+                    current_filename = f"pic_{keyword}_{i:02d}.png"
+                else:
+                    # Add index to filename for all images
+                    name, ext = os.path.splitext(current_filename)
+                    current_filename = f"{name}_{i:02d}{ext}"
+
+                output_path = pictogram_dir / current_filename
+
+                # Download image
+                img_response = requests.get(url)
+                img_response.raise_for_status()
+
+                # Save image
+                with open(output_path, "wb") as f:
+                    f.write(img_response.content)
+
+                generated_files.append(str(output_path))
+                logger.info(f"Saved image to {output_path}")
+
+            except Exception as e:
+                logger.error(f"Error downloading image {i}: {e}")
+                continue
+
+        if generated_files:
+            return JSONResponse(
+                content={"success": True, "files": generated_files}, status_code=200
+            )
 
         logger.error("No images were found in the response.")
-        return None
+        return JSONResponse(
+            content={"success": False, "error": "No images found in the response"},
+            status_code=500,
+        )
 
     except Exception as e:
         logger.error(f"An error occurred: {e}")
-        return None
+        return JSONResponse(
+            content={"success": False, "error": str(e)}, status_code=500
+        )

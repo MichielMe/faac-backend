@@ -1,4 +1,9 @@
-from .pictograms import router as pictograms_router
-from .voice import router as voice_generator_router
+from .keyword import router as keyword_router
+from .pictogram import router as pictogram_router
+from .voice import router as voice_router
 
-__all__ = ["pictograms_router", "voice_generator_router"]
+__all__ = [
+    "pictogram_router",
+    "keyword_router",
+    "voice_router",
+]

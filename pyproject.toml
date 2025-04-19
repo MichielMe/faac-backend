@@ -5,6 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "cairosvg>=2.7.1",
     "elevenlabs>=1.56.0",
     "fastapi[standard]>=0.115.12",
     "google-genai>=1.10.0",
@@ -13,4 +14,17 @@ dependencies = [
     "pillow>=11.2.1",
     "pydantic-settings>=2.8.1",
     "requests>=2.32.3",
+    "opencv-python>=4.8.0",
+    "numpy>=1.26.4",
+    "beautifulsoup4>=4.13.4",
+    "selenium>=4.31.0",
+    "sqlalchemy>=2.0.40",
+    "sqlmodel>=0.0.24",
+    "rembg>=2.0.65",
+    "onnxruntime>=1.21.1",
+]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.11.6",
 ]
