@@ -22,6 +22,10 @@ dependencies = [
     "sqlmodel>=0.0.24",
     "rembg>=2.0.65",
     "onnxruntime>=1.21.1",
+    "boto3>=1.37.37",
+    "supabase>=2.15.0",
+    "python-dotenv>=1.1.0",
+    "psycopg2>=2.9.10",
 ]
 
 [dependency-groups]

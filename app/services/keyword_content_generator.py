@@ -5,14 +5,17 @@ from typing import Dict, List, Optional, Tuple
 from loguru import logger
 from sqlmodel import Session, select
 
-from app.core.config import settings
+from app.core import SupabaseCRUD, get_supabase_client, settings
 from app.models import Audio, Keyword, Voice
 from app.services.bg_remover import remove_background
-from app.services.open_symbols_downloader import generate_pictogram_open_symbols
-from app.services.photoroom_rmbg import remove_background as remove_background_photoroom
-from app.services.pictogram_generator_google import generate_two_pictograms_google
+from app.services.do_bucket import DOSpacesClient
+
+# from app.services.open_symbols_downloader import generate_pictogram_open_symbols
+# from app.services.photoroom_rmbg import remove_background as remove_background_photoroom
+# from app.services.pictogram_generator_google import generate_two_pictograms_google
 from app.services.pictogram_generator_ideogram import generate_pictogram_ideogram
-from app.services.pictogram_generator_openai import generate_two_pictograms_openai
+
+# from app.services.pictogram_generator_openai import generate_two_pictograms_openai
 from app.services.voice_generator import generate_voice
 
 
@@ -27,11 +30,21 @@ class KeywordContentGenerator:
         from app.services.image_judge import ImageJudge
 
         self.image_judge = ImageJudge()
+        self.do_client = DOSpacesClient()
 
         # Ensure directories exist
+        self._initialize_directories()
+
+        # Initialize Supabase client
+        self.supabase_client = get_supabase_client()
+        self.supabase_crud = SupabaseCRUD(self.supabase_client)
+
+    def _initialize_directories(self) -> None:
+        """Initialize necessary directories for storing assets."""
         self.pictograms_dir = Path("app/assets/pictograms")
         self.pictograms_dir_final = Path("app/assets/pictograms_final")
         self.audio_dir = Path("app/assets/audio")
+
         self.pictograms_dir.mkdir(parents=True, exist_ok=True)
         self.pictograms_dir_final.mkdir(parents=True, exist_ok=True)
         self.audio_dir.mkdir(parents=True, exist_ok=True)
@@ -47,105 +60,148 @@ class KeywordContentGenerator:
         4. Update the keyword with pictogram and audio
         5. Return the updated keyword
         """
-        # Get keyword ID if keyword exists in database, if not make a new one
+        # Get or create keyword in database
+        db_keyword = self._get_or_create_keyword(keyword)
+
+        # 1. Generate pictures
+        logger.info(f"Generating pictures for keyword: {db_keyword.name}")
+        await self._generate_pictures(db_keyword.name)
+
+        # 2. Process the best picture
+        db_keyword = await self._process_best_picture(db_keyword)
+
+        # 3. Generate and save voice clips
+        db_keyword = await self._process_voice_clips(db_keyword)
+
+        return db_keyword
+
+    def _get_or_create_keyword(self, keyword: Keyword) -> Keyword:
+        """Get existing keyword or create a new one."""
         db_keyword = self.db.exec(
             select(Keyword).where(Keyword.name == keyword.name)
         ).first()
+
         if not db_keyword:
             db_keyword = Keyword(name=keyword.name)
             self.db.add(db_keyword)
             self.db.commit()
             self.db.refresh(db_keyword)
 
-        # 1. Generate pictures
-        logger.info(f"Generating pictures for keyword: {db_keyword.name}")
-        picture_files = await self._generate_pictures(db_keyword.name)
+        return db_keyword
 
-        # 2. Judge the best picture
-        logger.info(f"Judging the best picture for keyword: {db_keyword.name}")
-        best_picture_path, explanation = self._judge_pictures(db_keyword.name)
-        output_path = Path(
-            f"{self.pictograms_dir_final}/pic_{db_keyword.name}_final.png"
-        )
-        # 2.1. Remove background from the best picture
-        if best_picture_path:
+    async def _process_best_picture(self, keyword: Keyword) -> Keyword:
+        """Process, upload and save the best picture for the keyword."""
+        # Judge the best picture
+        logger.info(f"Judging the best picture for keyword: {keyword.name}")
+        best_picture_path, explanation = self._judge_pictures(keyword.name)
+
+        if not best_picture_path:
+            logger.error(f"No suitable picture found for keyword: {keyword.name}")
+            return keyword
+
+        # Process the selected picture
+        output_path = self.pictograms_dir_final / f"pic_{keyword.name}_final.png"
+
+        try:
+            # Remove background from the best picture
             logger.info(
                 f"Removing background from the best picture: {best_picture_path}"
             )
-            best_picture_path = remove_background(best_picture_path, output_path)
+            remove_background(best_picture_path, output_path)
 
-        # 3. Set the pictogram URL
-        if best_picture_path:
-            # Convert Path object to string before storing in database
-            db_keyword.pictogram_url = str(output_path)
-        elif picture_files:
-            db_keyword.pictogram_url = picture_files[0]
-        else:
-            logger.error(f"No pictures generated for keyword: {db_keyword.name}")
+            # Upload the processed image - using output_path directly
+            filename = f"pic_{keyword.name}_final.png"
+            self._upload_image_to_spaces(output_path, filename)
 
-        self.db.add(db_keyword)
-        self.db.commit()
-        self.db.refresh(db_keyword)
+            # Get and save the CDN URL
+            uploaded_image_url = self.do_client.get_cdn_url_for_image(filename)
+            if uploaded_image_url:
+                keyword.pictogram_url = uploaded_image_url
+                self.db.add(keyword)
+                self.db.commit()
+                self.db.refresh(keyword)
+            else:
+                logger.error(f"Failed to get CDN URL for image: {filename}")
+        except Exception as e:
+            logger.error(f"Error processing picture for {keyword.name}: {e}")
 
-        # 4. Generate voice clips
-        logger.info(f"Generating voice clips for keyword: {db_keyword.name}")
-        audio_paths = self._generate_voice_clips(db_keyword.name, db_keyword.language)
+        return keyword
 
-        # 5. Save audio files to database
-        audio = self._save_audio_to_db(db_keyword.id, audio_paths)
+    def _upload_image_to_spaces(self, local_path: Path, filename: str) -> bool:
+        """Upload an image to Digital Ocean Spaces."""
+        try:
+            logger.debug(f"Uploading image to Digital Ocean Spaces: {local_path}")
+            self.do_client.upload_image(
+                local_file_path=local_path,
+                destination_key=filename,
+            )
+
+            # Verify upload was successful
+            if self.do_client.check_file_exists(f"pictograms/{filename}"):
+                logger.info(f"Image pictograms/{filename} successfully uploaded")
+                return True
+            else:
+                logger.error(f"Image pictograms/{filename} upload verification failed")
+                return False
+        except Exception as e:
+            logger.error(f"Failed to upload image {filename}: {e}")
+            return False
+
+    async def _process_voice_clips(self, keyword: Keyword) -> Keyword:
+        """Generate, upload and save voice clips for the keyword."""
+        # Generate voice clips
+        logger.info(f"Generating voice clips for keyword: {keyword.name}")
+        audio_paths = self._generate_voice_clips(keyword.name, keyword.language)
+
+        # Upload audio files and get URLs
+        audio_urls = self._upload_audio_files(audio_paths)
+
+        # Save to database
+        audio = self._save_audio_to_db(keyword.id, audio_urls)
         if audio:
-            db_keyword.audio_id = audio.id
-            self.db.add(db_keyword)
+            keyword.audio_id = audio.id
+            self.db.add(keyword)
             self.db.commit()
-            self.db.refresh(db_keyword)
+            self.db.refresh(keyword)
 
-        return db_keyword
+        return keyword
+
+    def _upload_audio_files(self, audio_paths: Dict[str, str]) -> Dict[str, str]:
+        """Upload audio files to Digital Ocean Spaces and return URLs."""
+        audio_urls = {}
+
+        for voice_type, audio_path in audio_paths.items():
+            if not audio_path:
+                continue
+
+            try:
+                audio_filename = os.path.basename(audio_path)
+                self.do_client.upload_audio(
+                    local_file_path=audio_path,
+                    destination_key=f"voice_clips/{audio_filename}",
+                )
+                logger.info(
+                    f"Uploaded audio file to Digital Ocean Spaces: {audio_filename}"
+                )
+
+                cdn_url = self.do_client.get_cdn_url_for_audio(f"{audio_filename}")
+                if cdn_url:
+                    audio_urls[voice_type] = cdn_url
+                else:
+                    logger.error(f"Failed to get CDN URL for audio: {audio_filename}")
+            except Exception as e:
+                logger.error(f"Error uploading audio file {audio_path}: {e}")
+
+        return audio_urls
 
     async def _generate_pictures(self, keyword_name: str) -> List[str]:
         """
-        Generate pictures for the keyword and return file paths:
-        # - 2 from Google Gemini
-        # - 2 from Open Symbols API
-        - 4 from Ideogram, 2 from Open Symbols
+        Generate pictures for the keyword and return file paths.
+        Currently using 4 images from Ideogram.
         """
         generated_files = []
 
-        ############################################### GOOGLE AND OPENAI - START ###############################################
-        # # 1. Generate 2 images with Google
-        # google_files = []
-        # try:
-        #     logger.info(f"Generating 2 Google images for keyword: {keyword_name}")
-        #     generate_two_pictograms_google(keyword=keyword_name)
-
-        #     # Add expected filenames based on naming convention
-        #     google_files = [f"pic_{keyword_name}_01.png", f"pic_{keyword_name}_02.png"]
-        #     generated_files.extend(google_files)
-        #     logger.info(f"Added Google images: {google_files}")
-
-        # except Exception as e:
-        #     logger.error(
-        #         f"Exception generating Google pictures for {keyword_name}: {e}"
-        #     )
-
-        # # 1.5. Generate 2 images with OpenAI
-        # openai_files = []
-        # try:
-        #     logger.info(f"Generating 2 OpenAI images for keyword: {keyword_name}")
-        #     generate_two_pictograms_openai(keyword=keyword_name)
-
-        #     # Add expected filenames based on naming convention
-        #     openai_files = [f"pic_{keyword_name}_03.png", f"pic_{keyword_name}_04.png"]
-        #     generated_files.extend(openai_files)
-        #     logger.info(f"Added OpenAI images: {openai_files}")
-
-        # except Exception as e:
-        #     logger.error(
-        #         f"Exception generating OpenAI pictures for {keyword_name}: {e}"
-        #     )
-        ############################################### GOOGLE AND OPENAI - END ###############################################
-
-        # IDEOGRAM
-        ideogram_files = []
+        # Generate Ideogram images
         try:
             logger.info(f"Generating 4 Ideogram images for keyword: {keyword_name}")
             generate_pictogram_ideogram(keyword=keyword_name)
@@ -165,31 +221,12 @@ class KeywordContentGenerator:
                 f"Exception generating Ideogram pictures for {keyword_name}: {e}"
             )
 
-        # OPEN SYMBOLS
-        # os_files = []
-        # try:
-        #     logger.info(f"Generating 2 Open Symbols images for keyword: {keyword_name}")
-        #     generate_pictogram_open_symbols(
-        #         keyword=keyword_name, generate_multiple=True, num_images=2
-        #     )
-
-        #     # Add expected filenames based on naming convention
-        #     os_files = [f"pic_{keyword_name}_05.png", f"pic_{keyword_name}_06.png"]
-        #     generated_files.extend(os_files)
-        #     logger.info(f"Added Open Symbols images: {os_files}")
-
-        # except Exception as e:
-        #     logger.error(
-        #         f"Exception generating Open Symbols pictures for {keyword_name}: {e}"
-        #     )
-
-        # Return all generated files
         logger.info(
             f"Total images generated for {keyword_name}: {len(generated_files)}"
         )
         return generated_files
 
-    def _judge_pictures(self, keyword_name: str) -> Tuple[Optional[str], str]:
+    def _judge_pictures(self, keyword_name: str) -> Tuple[Optional[Path], str]:
         """Judge the best picture from the generated ones."""
         try:
             logger.info(f"Judging pictures for keyword: {keyword_name}")
@@ -198,27 +235,47 @@ class KeywordContentGenerator:
             best_image_path, explanation = self.image_judge.find_best_image_for_keyword(
                 keyword_name
             )
-            return best_image_path, explanation
+
+            # Ensure best_image_path is a Path object if it's a string
+            if isinstance(best_image_path, str):
+                best_image_path = Path(best_image_path)
+
+            # Verify the path exists
+            if best_image_path and best_image_path.exists():
+                logger.info(f"Selected best image: {best_image_path}")
+                return best_image_path, explanation
+            elif best_image_path:
+                logger.warning(f"Selected image doesn't exist: {best_image_path}")
+            else:
+                logger.warning(f"Image judge returned None for keyword: {keyword_name}")
+
+            # Fallback if image judge failed or returned None
+            return self._fallback_image_selection(keyword_name)
 
         except Exception as e:
             logger.error(f"Exception judging pictures for {keyword_name}: {e}")
+            return self._fallback_image_selection(keyword_name)
 
-            # Fallback: pick a pictogram manually based on naming convention
-            # We'll prefer in this order: Google (01-02), OpenSymbols (05-06)
-            fallback_paths = []
+    def _fallback_image_selection(
+        self, keyword_name: str
+    ) -> Tuple[Optional[Path], str]:
+        """Select a fallback image based on naming convention."""
+        fallback_paths = []
 
-            # Try to find files with expected naming patterns
-            for index in range(1, 7):
-                filename = f"pic_{keyword_name}_{index:02d}.png"
-                file_path = os.path.join(self.pictograms_dir, filename)
-                if os.path.exists(file_path):
-                    fallback_paths.append(file_path)
+        # Try to find files with expected naming patterns
+        for index in range(1, 5):  # We're using 4 Ideogram images
+            filename = f"pic_{keyword_name}_{index:02d}.png"
+            file_path = self.pictograms_dir / filename
+            if file_path.exists():
+                fallback_paths.append(file_path)
 
-            # Return the first file found, or None if no files exist
-            if fallback_paths:
-                return fallback_paths[0], "Fallback selection due to API error"
+        # Return the first file found, or None if no files exist
+        if fallback_paths:
+            logger.info(f"Using fallback image selection: {fallback_paths[0]}")
+            return fallback_paths[0], "Fallback selection due to judge error"
 
-            return None, f"Error judging pictures and no fallback found: {str(e)}"
+        logger.error(f"No pictures found for keyword: {keyword_name}")
+        return None, f"No pictures found for keyword: {keyword_name}"
 
     def _generate_voice_clips(
         self, keyword_name: str, language: str = "en"
@@ -237,67 +294,38 @@ class KeywordContentGenerator:
             logger.error("Missing ELEVEN_LABS_API_KEY environment variable")
             return voice_paths
 
-        # Generate voices based on language
-        if language == "en":
-            # English voices
-            try:
-                logger.info(f"Generating man voice for keyword: {keyword_name}")
-                file_path = generate_voice(keyword_name, Voice.MAN)
-                if file_path and os.path.exists(file_path):
-                    voice_paths["voice_man"] = file_path
-                    logger.info(f"Successfully generated man voice: {file_path}")
-                else:
-                    logger.error(f"Voice generation returned invalid path: {file_path}")
-            except Exception as e:
-                logger.error(f"Error generating man voice for {keyword_name}: {str(e)}")
+        voice_configs = self._get_voice_configs(language)
 
-            try:
-                logger.info(f"Generating woman voice for keyword: {keyword_name}")
-                file_path = generate_voice(keyword_name, Voice.WOMAN)
-                if file_path and os.path.exists(file_path):
-                    voice_paths["voice_woman"] = file_path
-                    logger.info(f"Successfully generated woman voice: {file_path}")
-                else:
-                    logger.error(f"Voice generation returned invalid path: {file_path}")
-            except Exception as e:
-                logger.error(f"Error generating woman voice for {keyword_name}: {e}")
-
-        elif language == "vl":
-            # Flemish voices
-            try:
-                logger.info(f"Generating Flemish man voice for keyword: {keyword_name}")
-                file_path = generate_voice(keyword_name, Voice.MAN_FLEMISH)
-                if file_path and os.path.exists(file_path):
-                    voice_paths["voice_man"] = file_path
-                    logger.info(
-                        f"Successfully generated Flemish man voice: {file_path}"
-                    )
-                else:
-                    logger.error(f"Voice generation returned invalid path: {file_path}")
-            except Exception as e:
-                logger.error(
-                    f"Error generating Flemish man voice for {keyword_name}: {e}"
-                )
-
+        for voice_type, voice_id in voice_configs.items():
             try:
                 logger.info(
-                    f"Generating Flemish woman voice for keyword: {keyword_name}"
+                    f"Generating {voice_type} voice for keyword: {keyword_name}"
                 )
-                file_path = generate_voice(keyword_name, Voice.WOMAN_FLEMISH)
+                file_path = generate_voice(keyword_name, voice_id)
+
                 if file_path and os.path.exists(file_path):
-                    voice_paths["voice_woman"] = file_path
+                    voice_paths[voice_type] = file_path
                     logger.info(
-                        f"Successfully generated Flemish woman voice: {file_path}"
+                        f"Successfully generated {voice_type} voice: {file_path}"
                     )
                 else:
                     logger.error(f"Voice generation returned invalid path: {file_path}")
             except Exception as e:
                 logger.error(
-                    f"Error generating Flemish woman voice for {keyword_name}: {e}"
+                    f"Error generating {voice_type} voice for {keyword_name}: {e}"
                 )
 
-        logger.info(f"Generated voice files for {keyword_name}: {voice_paths}")
         return voice_paths
+
+    def _get_voice_configs(self, language: str) -> Dict[str, Voice]:
+        """Get voice configurations based on language."""
+        if language == "en":
+            return {"voice_man": Voice.MAN, "voice_woman": Voice.WOMAN}
+        elif language == "vl":
+            return {"voice_man": Voice.MAN_FLEMISH, "voice_woman": Voice.WOMAN_FLEMISH}
+        else:
+            logger.warning(f"Unsupported language: {language}, defaulting to English")
+            return {"voice_man": Voice.MAN, "voice_woman": Voice.WOMAN}
 
     def _save_audio_to_db(
         self, keyword_id: int, audio_paths: Dict[str, str]
@@ -310,16 +338,8 @@ class KeywordContentGenerator:
         try:
             # Create and save audio record
             audio = Audio(
-                voice_man=(
-                    str(audio_paths.get("voice_man"))
-                    if audio_paths.get("voice_man")
-                    else None
-                ),
-                voice_woman=(
-                    str(audio_paths.get("voice_woman"))
-                    if audio_paths.get("voice_woman")
-                    else None
-                ),
+                voice_man=audio_paths.get("voice_man"),
+                voice_woman=audio_paths.get("voice_woman"),
                 keyword_id=keyword_id,
             )
             self.db.add(audio)
