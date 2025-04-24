@@ -1,11 +1,9 @@
 import os
-from io import BytesIO
 from pathlib import Path
 
 import requests
 from fastapi.responses import JSONResponse
 from loguru import logger
-from PIL import Image
 
 from app.core import settings
 

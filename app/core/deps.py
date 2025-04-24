@@ -1,31 +1,22 @@
-from fastapi import Depends
-from sqlmodel import Session
 
-from app.core.db import get_session
 from app.services.audio_service import AudioService
 from app.services.keyword_content_generator import KeywordContentGenerator
 from app.services.keyword_service import KeywordService
 
 
-# Database dependency
-def get_db():
-    """Dependency for database session."""
-    return next(get_session())
-
-
 # Service dependencies
-def get_keyword_service(db: Session = Depends(get_db)) -> KeywordService:
+def get_keyword_service() -> KeywordService:
     """Dependency for KeywordService."""
-    return KeywordService(db)
+    return KeywordService()
 
 
-def get_audio_service(db: Session = Depends(get_db)) -> AudioService:
+def get_audio_service() -> AudioService:
     """Dependency for AudioService."""
-    return AudioService(db)
+    return AudioService()
 
 
-def get_keyword_content_generator(
-    db: Session = Depends(get_db),
-) -> KeywordContentGenerator:
+def get_keyword_content_generator() -> KeywordContentGenerator:
     """Dependency for KeywordContentGenerator."""
-    return KeywordContentGenerator(db=db)
+    # Note: KeywordContentGenerator will need to be updated separately
+    # to remove local database dependency
+    return KeywordContentGenerator()

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query, status
+from fastapi.responses import JSONResponse
 
 from app.models import Voice
-from app.services import generate_voice, generate_voice_flemish
+from app.services.voice_generator import generate_voice
 
 router = APIRouter(prefix="/voice", tags=["voice"])
 
@@ -10,20 +11,45 @@ router = APIRouter(prefix="/voice", tags=["voice"])
 async def generate_voice_endpoint(
     text: str,
     voice: Voice = Query(
-        ..., description="Voice type: man, woman, child, man_vl, or vrouw_vl"
+        ..., description="Voice type: MAN, WOMAN, MAN_FLEMISH, or WOMAN_FLEMISH"
     ),
 ):
     """
     Generate voice audio for the provided text using the specified voice type.
 
+    Returns a JSON response with the audio file URL or an error message.
+
     Available voices:
-    - man: Adult male voice
-    - woman: Adult female voice
-    - child: Child voice
-    - man_vl: Flemish male voice
-    - vrouw_vl: Flemish female voice
+    - MAN: Adult male voice (English)
+    - WOMAN: Adult female voice (English)
+    - MAN_FLEMISH: Adult male voice (Flemish)
+    - WOMAN_FLEMISH: Adult female voice (Flemish)
     """
-    if voice == Voice.MAN_FLEMISH or voice == Voice.WOMAN_FLEMISH:
-        return generate_voice_flemish(text, voice)
-    else:
-        return generate_voice(text, voice)
+    try:
+        # Generate voice and get file path
+        audio_path = generate_voice(text, voice)
+
+        if not audio_path:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate voice audio",
+            )
+
+        # Return the audio file path
+        return JSONResponse(
+            content={
+                "success": True,
+                "audio_path": audio_path,
+                "message": f"Voice generated successfully with {voice.name}",
+            }
+        )
+
+    except Exception as e:
+        # Handle any unexpected errors
+        return JSONResponse(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            content={
+                "success": False,
+                "message": f"Error generating voice: {str(e)}",
+            },
+        )

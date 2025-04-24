@@ -15,7 +15,6 @@ __all__ = [
     "generate_voice",
     "generate_voice_flemish",
     "generate_pictogram_ideogram",
-    "remove_background_photoroom",
     "remove_background",
 ]
 
@@ -27,7 +26,6 @@ from .keyword_content_generator import KeywordContentGenerator
 from .keyword_service import KeywordService
 from .open_symbols_client import OpenSymbolsClient
 from .open_symbols_downloader import generate_pictogram_open_symbols
-from .photoroom_rmbg import remove_background as remove_background_photoroom
 from .pictogram_generator_google import (
     generate_pictogram_google,
     generate_two_pictograms_google,

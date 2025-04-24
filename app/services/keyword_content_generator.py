@@ -3,19 +3,12 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from loguru import logger
-from sqlmodel import Session, select
 
 from app.core import SupabaseCRUD, get_supabase_client, settings
-from app.models import Audio, Keyword, Voice
+from app.models import Keyword, Voice
 from app.services.bg_remover import remove_background
 from app.services.do_bucket import DOSpacesClient
-
-# from app.services.open_symbols_downloader import generate_pictogram_open_symbols
-# from app.services.photoroom_rmbg import remove_background as remove_background_photoroom
-# from app.services.pictogram_generator_google import generate_two_pictograms_google
 from app.services.pictogram_generator_ideogram import generate_pictogram_ideogram
-
-# from app.services.pictogram_generator_openai import generate_two_pictograms_openai
 from app.services.voice_generator import generate_voice
 
 
@@ -24,8 +17,7 @@ class KeywordContentGenerator:
     Service to generate content (pictograms and audio) for keywords.
     """
 
-    def __init__(self, db: Session):
-        self.db = db
+    def __init__(self):
         # Lazy import ImageJudge to avoid circular dependency
         from app.services.image_judge import ImageJudge
 
@@ -49,6 +41,36 @@ class KeywordContentGenerator:
         self.pictograms_dir_final.mkdir(parents=True, exist_ok=True)
         self.audio_dir.mkdir(parents=True, exist_ok=True)
 
+    def _cleanup_local_file(self, file_path: Path) -> None:
+        """Remove a local file if it exists."""
+        try:
+            if file_path and file_path.exists():
+                file_path.unlink()
+                logger.info(f"Removed local file: {file_path}")
+            else:
+                logger.debug(f"File does not exist, no cleanup needed: {file_path}")
+        except Exception as e:
+            logger.error(f"Error removing local file {file_path}: {e}")
+
+    def _cleanup_keyword_local_files(self, keyword_name: str) -> None:
+        """Clean up all local files related to a keyword."""
+        try:
+            # Clean up all generated pictograms
+            for index in range(1, 5):
+                filename = f"pic_{keyword_name}_{index:02d}.png"
+                file_path = self.pictograms_dir / filename
+                self._cleanup_local_file(file_path)
+
+            # Clean up the final processed pictogram
+            final_path = self.pictograms_dir_final / f"pic_{keyword_name}_final.png"
+            self._cleanup_local_file(final_path)
+
+            logger.info(
+                f"Cleaned up all local pictogram files for keyword: {keyword_name}"
+            )
+        except Exception as e:
+            logger.error(f"Error cleaning up pictogram files for {keyword_name}: {e}")
+
     async def generate_content_for_keyword(self, keyword: Keyword) -> Keyword:
         """
         Generate pictogram and audio for a keyword.
@@ -60,47 +82,70 @@ class KeywordContentGenerator:
         4. Update the keyword with pictogram and audio
         5. Return the updated keyword
         """
-        # Get or create keyword in database
-        db_keyword = self._get_or_create_keyword(keyword)
+        try:
+            # Get or create keyword in database
+            db_keyword = self._get_or_create_keyword(keyword)
 
-        # 1. Generate pictures
-        logger.info(f"Generating pictures for keyword: {db_keyword.name}")
-        await self._generate_pictures(db_keyword.name)
+            # 1. Generate pictures
+            logger.info(f"Generating pictures for keyword: {db_keyword['name']}")
+            await self._generate_pictures(db_keyword["name"])
 
-        # 2. Process the best picture
-        db_keyword = await self._process_best_picture(db_keyword)
+            # 2. Process the best picture
+            db_keyword = await self._process_best_picture(db_keyword)
 
-        # 3. Generate and save voice clips
-        db_keyword = await self._process_voice_clips(db_keyword)
+            # 3. Generate and save voice clips
+            db_keyword = await self._process_voice_clips(db_keyword)
 
-        return db_keyword
+            logger.info(
+                f"Content generation completed successfully for keyword: {db_keyword['name']}"
+            )
+            return Keyword.model_validate(db_keyword)
+        except Exception as e:
+            logger.error(f"Error in generate_content_for_keyword: {e}", exc_info=True)
+            # Re-raise to allow the background task system to log it
+            raise
 
-    def _get_or_create_keyword(self, keyword: Keyword) -> Keyword:
+    def _get_or_create_keyword(self, keyword: Keyword) -> dict:
         """Get existing keyword or create a new one."""
-        db_keyword = self.db.exec(
-            select(Keyword).where(Keyword.name == keyword.name)
-        ).first()
+        db_keywords = self.supabase_crud.read_filtered("keywords", "name", keyword.name)
+        logger.info(f"db_keywords: {db_keywords}")
 
-        if not db_keyword:
-            db_keyword = Keyword(name=keyword.name)
-            self.db.add(db_keyword)
-            self.db.commit()
-            self.db.refresh(db_keyword)
+        # Check if we found any matching keywords
+        if db_keywords and len(db_keywords) > 0:
+            # Use the first matching keyword
+            db_keyword = db_keywords[0]
+            logger.info(f"Found existing keyword: {db_keyword}")
+        else:
+            # Create a dictionary from the keyword object for JSON serialization
+            keyword_dict = {"name": keyword.name}
+            if hasattr(keyword, "language"):
+                keyword_dict["language"] = keyword.language
+
+            self.supabase_crud.create("keywords", keyword_dict)
+            db_keywords = self.supabase_crud.read_filtered(
+                "keywords", "name", keyword.name
+            )
+
+            if db_keywords and len(db_keywords) > 0:
+                db_keyword = db_keywords[0]
+                logger.info(f"Created new keyword: {db_keyword}")
+            else:
+                raise ValueError(f"Failed to create keyword: {keyword.name}")
 
         return db_keyword
 
-    async def _process_best_picture(self, keyword: Keyword) -> Keyword:
+    async def _process_best_picture(self, keyword: dict) -> dict:
         """Process, upload and save the best picture for the keyword."""
         # Judge the best picture
-        logger.info(f"Judging the best picture for keyword: {keyword.name}")
-        best_picture_path, explanation = self._judge_pictures(keyword.name)
+        logger.info(f"Judging the best picture for keyword: {keyword['name']}")
+        best_picture_path, explanation = self._judge_pictures(keyword["name"])
 
         if not best_picture_path:
-            logger.error(f"No suitable picture found for keyword: {keyword.name}")
+            logger.error(f"No suitable picture found for keyword: {keyword['name']}")
             return keyword
 
         # Process the selected picture
-        output_path = self.pictograms_dir_final / f"pic_{keyword.name}_final.png"
+        output_path = self.pictograms_dir_final / f"pic_{keyword['name']}_final.png"
 
         try:
             # Remove background from the best picture
@@ -110,20 +155,22 @@ class KeywordContentGenerator:
             remove_background(best_picture_path, output_path)
 
             # Upload the processed image - using output_path directly
-            filename = f"pic_{keyword.name}_final.png"
+            filename = f"pic_{keyword['name']}_final.png"
             self._upload_image_to_spaces(output_path, filename)
 
             # Get and save the CDN URL
             uploaded_image_url = self.do_client.get_cdn_url_for_image(filename)
             if uploaded_image_url:
-                keyword.pictogram_url = uploaded_image_url
-                self.db.add(keyword)
-                self.db.commit()
-                self.db.refresh(keyword)
+                keyword["pictogram_url"] = uploaded_image_url
+                self.supabase_crud.update("keywords", keyword["id"], keyword)
+                logger.info(f"Updated keyword: {keyword}")
+
+                # Clean up local files now that we have the CDN URL
+                self._cleanup_keyword_local_files(keyword["name"])
             else:
                 logger.error(f"Failed to get CDN URL for image: {filename}")
         except Exception as e:
-            logger.error(f"Error processing picture for {keyword.name}: {e}")
+            logger.error(f"Error processing picture for {keyword['name']}: {e}")
 
         return keyword
 
@@ -147,22 +194,27 @@ class KeywordContentGenerator:
             logger.error(f"Failed to upload image {filename}: {e}")
             return False
 
-    async def _process_voice_clips(self, keyword: Keyword) -> Keyword:
+    async def _process_voice_clips(self, keyword: dict) -> dict:
         """Generate, upload and save voice clips for the keyword."""
         # Generate voice clips
-        logger.info(f"Generating voice clips for keyword: {keyword.name}")
-        audio_paths = self._generate_voice_clips(keyword.name, keyword.language)
+        language = keyword.get("language", "en")  # Default to 'en' if language not set
+        logger.info(f"Generating voice clips for keyword: {keyword['name']}")
+        audio_paths = self._generate_voice_clips(keyword["name"], language)
 
         # Upload audio files and get URLs
         audio_urls = self._upload_audio_files(audio_paths)
 
         # Save to database
-        audio = self._save_audio_to_db(keyword.id, audio_urls)
+        audio = self._save_audio_to_db(keyword["id"], audio_urls)
         if audio:
-            keyword.audio_id = audio.id
-            self.db.add(keyword)
-            self.db.commit()
-            self.db.refresh(keyword)
+            keyword["audio_id"] = audio["id"]  # Access id as a dictionary key
+            self.supabase_crud.update("keywords", keyword["id"], keyword)
+            logger.info(f"Updated keyword: {keyword}")
+
+            # Clean up local audio files now that they're saved in the database
+            for voice_type, audio_path in audio_paths.items():
+                if audio_path and audio_urls.get(voice_type):
+                    self._cleanup_local_file(Path(audio_path))
 
         return keyword
 
@@ -329,25 +381,34 @@ class KeywordContentGenerator:
 
     def _save_audio_to_db(
         self, keyword_id: int, audio_paths: Dict[str, str]
-    ) -> Optional[Audio]:
-        """Save audio to the database."""
+    ) -> Optional[dict]:
+        """Save audio to the Supabase database."""
         if not (audio_paths.get("voice_man") or audio_paths.get("voice_woman")):
             logger.warning(f"No audio files to save for keyword_id: {keyword_id}")
             return None
 
         try:
-            # Create and save audio record
-            audio = Audio(
-                voice_man=audio_paths.get("voice_man"),
-                voice_woman=audio_paths.get("voice_woman"),
-                keyword_id=keyword_id,
-            )
-            self.db.add(audio)
-            self.db.commit()
-            self.db.refresh(audio)
+            # Create audio record for Supabase
+            audio_dict = {
+                "voice_man": audio_paths.get("voice_man"),
+                "voice_woman": audio_paths.get("voice_woman"),
+                "keyword_id": keyword_id,
+            }
 
-            logger.info(f"Successfully saved audio for keyword {keyword_id}")
-            return audio
+            # Insert into Supabase
+            result = self.supabase_crud.create("audio_files", audio_dict)
+
+            # In our updated implementation, result is directly the dictionary
+            if result and "id" in result:
+                audio_id = result["id"]
+                logger.info(
+                    f"Successfully saved audio to Supabase for keyword {keyword_id}, audio ID: {audio_id}"
+                )
+                return {"id": audio_id, **audio_dict}
+            else:
+                logger.error(f"Error saving audio to Supabase: {result}")
+                return None
+
         except Exception as e:
             logger.error(f"Error saving audio to database: {e}")
             return None

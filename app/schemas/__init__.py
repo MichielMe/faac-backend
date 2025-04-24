@@ -6,6 +6,7 @@ from .keyword import (
     KeywordReadDetailed,
     KeywordUpdate,
 )
+from .keyword_audio import KeywordAudioResponse
 
 __all__ = [
     "AudioBase",
@@ -17,4 +18,5 @@ __all__ = [
     "KeywordRead",
     "KeywordReadDetailed",
     "KeywordUpdate",
+    "KeywordAudioResponse",
 ]

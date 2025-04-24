@@ -32,10 +32,9 @@ class Settings(BaseSettings):
     BUCKET: str = os.getenv("BUCKET")
     REGION: str = os.getenv("REGION")
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./faac.db"
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL")
-    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY")
+    # Database - Supabase
+    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
+    SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
 
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
@@ -56,6 +55,8 @@ class Settings(BaseSettings):
         importlib.reload(os)
 
         self.ADMIN_API_KEY = os.getenv("ADMIN_API_KEY", self.ADMIN_API_KEY)
+        self.SUPABASE_URL = os.getenv("SUPABASE_URL", self.SUPABASE_URL)
+        self.SUPABASE_KEY = os.getenv("SUPABASE_KEY", self.SUPABASE_KEY)
 
 
 settings = Settings()

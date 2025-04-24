@@ -5,13 +5,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import keyword_router, pictogram_router, voice_router
 from app.core.config import settings
-from app.core.db import create_db_and_tables
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Run startup events
-    await create_db_and_tables()
     yield
     # Run shutdown events
 
