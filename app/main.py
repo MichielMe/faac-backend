@@ -1,3 +1,4 @@
+import json
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -24,9 +25,18 @@ def create_application() -> FastAPI:
     )
 
     # Set up CORS
+    # Support BACKEND_CORS_ORIGINS as list or JSON/comma-separated string
+    cors_origins = settings.BACKEND_CORS_ORIGINS
+    if isinstance(cors_origins, str):
+        try:
+            cors_origins = json.loads(cors_origins)
+        except ValueError:
+            cors_origins = [
+                o.strip() for o in cors_origins.strip("[]").split(",") if o.strip()
+            ]
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.BACKEND_CORS_ORIGINS,
+        allow_origins=cors_origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
