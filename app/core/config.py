@@ -1,7 +1,9 @@
 import importlib
+import json
 import os
-from typing import List
+from typing import List, Union
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -37,7 +39,29 @@ class Settings(BaseSettings):
     SUPABASE_KEY: str = os.getenv("SUPABASE_KEY", "")
 
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = ["*"]
+    BACKEND_CORS_ORIGINS: Union[List[str], str] = ["*"]
+
+    @field_validator("BACKEND_CORS_ORIGINS", mode="before")
+    @classmethod
+    def _parse_cors_origins(cls, v):
+        """
+        Parse BACKEND_CORS_ORIGINS from environment as JSON list or comma-separated string.
+        """
+        if isinstance(v, str):
+            # Fallback parsing: comma-separated or JSON-like
+            try:
+                return json.loads(v)
+            except ValueError:
+                if v.startswith("[") and v.endswith("]"):
+                    inner = v[1:-1]
+                else:
+                    inner = v
+                return [
+                    item.strip().strip('"').strip("'")
+                    for item in inner.split(",")
+                    if item.strip()
+                ]
+        return v
 
     # File storage
     # UPLOAD_DIR: Path = Path("uploads")

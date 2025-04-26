@@ -4,7 +4,7 @@
 #
 
 app = 'faac-backend'
-primary_region = 'ams'
+primary_region = 'fra1'
 
 [build]
 
