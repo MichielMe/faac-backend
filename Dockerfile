@@ -3,6 +3,9 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
 
 # Install Cairo and other required system dependencies
 RUN apt-get update && apt-get install -y \
+    build-essential \
+    python3-dev \
+    libpq-dev \
     libcairo2-dev \
     libpango1.0-dev \
     libglib2.0-0 \
@@ -52,4 +55,5 @@ ENTRYPOINT []
 # Run the FastAPI application by default
 # Uses `fastapi dev` to enable hot-reloading when the `watch` sync occurs
 # Uses `--host 0.0.0.0` to allow access from outside the container
-CMD ["fastapi", "dev", "--host", "0.0.0.0"] 
+EXPOSE 8080
+CMD ["fastapi", "run", "--host", "0.0.0.0", "--port", "8080"] 
