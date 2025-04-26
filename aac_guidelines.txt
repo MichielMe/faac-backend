@@ -1,0 +1,258 @@
+When considering symbol set choices it is important to think about:
+
+involving stakeholders including AAC users.
+setting up an AAC Forum who can work together, either face to face or online.
+making use of a simple voting system using examples from different symbol sets. This may just be a document with a series of symbols from a group of symbol sets.
+the idea of building on what is already available and only designing new symbols where necessary.
+AAC symbol sets as not being standardized unlike some universal icons used for safety and warnings. AAC symbols tend to differ in their style, use of colour and outlines, as well as formats for use with technology or paper-based systems.
+symbol set schema
+
+Remember the need for:
+
+ease of learning and ‘guessability’ when looking at symbols.
+a wide range of symbols to cope with increased use in different settings and for a variety of tasks, whilst also considering cultural nuances.
+adaptable symbols, for example making sure the image does not contain writing. This is so they can be used with any language and for a variety of concepts.
+a style guide or schema with grammar and topic rules to guide design. (Widgit symbol set schema)
+the open license of the symbol set to ensure it allows for personalization with the ability to add additional elements such as number, tense, or additional symbols for combination words or phrases such as ‘orange juice.
+
+Principles of Symbol Design
+Principles of Symbol Design
+different nationalities
+
+In this topic we will consider:  
+
+The importance of language and culture in symbol design
+Recognising the importance of both translation and localisation
+How symbol design is influenced by how the symbols will be used 
+Why open licences are important 
+
+
+Mark as done
+Pictographic Symbol Sets
+
+In the following YouTube video Edie's mother goes through some symbols watching for her reaction - look at the symbols carefully and think about the mix on offer.
+
+
+There are many pictographic symbol sets available for AAC users and several are suitable for children with complex communication needs, such as those offered to Edie. They tend to be made up of core and fringe words and have consistent design principles and schema as illustrated by Widgit.
+
+Some symbol sets are available across the world, but often they have been developed specifically for a language with a particular group in mind. You will have already explored the range available on Global Symbols and Open Symbols when using Boardbuilder. 
+
+Global Symbols sets
+
+Open licenced symbols offer us the chance to explore which symbols need adaptations to suit localisation and personalisation as we discussed early on in the course.
+
+
+
+Mark as done
+ Activity - Considering symbol design
+
+Symbol design is not just about the graphics, there may also be challenges with the orthography.  Think about the way a language is written - the spelling of words.  Have you thought how this affects symbol design and the choices you may make for the symbol labels when working on communication boards?
+
+think bubble
+
+Write two sentences that involve the past and future tense, two plurals and a male and female character with descriptive adjectives. 
+What happens to the symbol label when the way the text is written depends on grammar, number and gender and even the next word in a sentence?  Does every language use the root word?
+Words have mulitple meanings (polysemy) for example the word 'will' in English or there are different words which have the same sound (homophones) as in 'bough' and 'bow' said in the same way as 'cow'.  You can also say 'bow' as in 'know' which can also be a problem when searching for symbols or using text to speech, unless there is more information provided.  
+Explore how a search for these words on a symbol repository such as Global Symbols (which offers different languages) might affect the symbols found. 
+Did you discover any verbs with past tense?  If not, how will you deal with this concept? 
+Widgit offer clear guidelines to their schema.
+Make a note in your reflective journal about any issues that you feel are relevant to symbol design that you wish to explore further - it is a subject that is often left to the we symbolssymbol set developers! 
+
+In some ways it is much easier to think about the look and feel of images that might reflect cultural differences such as housing, social settings and dress compared to abstract concepts.  Small adaptations to symbols can improve iconicity as we have already discussed.  
+
+
+
+Breaking down Barriers
+
+Adam voting on a symbolConsider participatory ways of encouraging collaboration when designing and developing symbols, as this can have an impact on AAC users and their families  When a whole team is involved there is often an increased willingness to use the localised symbols.  
+
+Using social media and open communication systems can make for easier changes; being responsive to comments and requests based on the opinion of the majority.
+
+Think about developing a voting system if you are involved in symbol designs.  In the picture Adam is voting on new symbols in Qatar.  You are welcome to make use of the free voting training materials available.  
+
+The image below is an illustration of a symbol set where symbols have received votes and a survey has been completed.
+
+
+
+survey of symbols
+
+Mark as done
+Symbol Design requirements
+
+Main Points
+Iconicity
+Size
+Outline
+Consistency
+Colour
+Iconicity is when a symbol’s relationship to its referent (what it relates to) can be guessed,  consider the ease of learning as this is important. A child may move from objects to photographs that have a particular meaning, but understanding the concept may be harder.
+
+baby with bottle, photo of bottle and symbol
+
+
+Remember Symbols are used everywhere and ...
+may need to be printed on card, on a chart, on a wall – size matters
+can provide text enhancement for literacy skill development, so need flexibility for label changes or even appearance.
+have to transfer from paper to device.
+need to be device agnostic – used with various applications on different types of AAC aids
+Integrate with text to speech – labels with accents (diacritics)
+Download a Word document about AAC Symbol Design  
+
+Mark as done
+ Activity - thinking about developing a schema for design
+
+There are times when iconicity or guessability and developing a schema for particular types of words can be challenging.  There may also be the problem of the gloss or text label failing to translate well into another language. Drag the labels to the appropriate symbol. (Thanks to ARASAAC)
+
+
+
+
+Mark as done
+Open Licences
+
+creative commons licencesYou may feel that a discussion about licences related to the content on an AAC communication chart is not relevant to your support for a young child's communication skills.  However, anyone building or making use of symbols on assistive technology devices needs to be aware of the copyright of images  and how they can be shared or adapted to suit user needs.  Open licences and Creative Commons licences (like commercial licences) can be quite complex, but the main point is to share symbols in the same way that the developers or owners have chosen to share their symbol set or images.  It is also important to use the same type of licence if you want to create symbols that you are adding to a particular set. 
+
+The advantage of an open licence is in the way localisation and personalisation can happen in the particular region or setting in which the potential AAC users are living. 
+
+Summary 
+
+Whilst some symbols can be considered “universal” we recognise that symbols are nuanced and carry meaning beyond concrete representation.
+"Symbolic value rests only in the mind of the user, the picture or manual sign has no symbolic meaning unless the user knows or recognises the meaning" (Loncke, 2014)
+Because symbols are open to interpretation engaging in the design of symbols for a specific community will help ensure that there is a shared understanding and interpretation of all of the symbols in a set.
+
+When designing symbols for communication we will find some symbols that are recognized universally such as those used for health and safety issues such as poison and danger symbols.
+However, we also recognize the nuances from different cultures and localization can be important for personal communication.
+Looking at the challenges globally makes us consider the differences within cultures.
+People use different words to describe cultures, such as civilization, society, a way of life, lifestyle, heritage, habits, and values.
+The word cloud has more words to consider. The most commonly chosen are language, food and tradition
+
+Symbols used to communicate concepts come in many different types with different levels of complexity and ease of guessing the meaning (iconicity). Here are just a few samples Signs and Icons Tend to have a single meaning escalator and save file
+
+Ideograph / Ideogram Geometric shapes for building a language for example 'Birthday in Blissymbolics and Chinese birthday in bliss and chinese
+
+Pictograph / Pictogram Can be used for multiple concepts - concrete and abstract pictographic symbols
+
+4e. Practicalities of Symbol Design
+Updated 27 April 2022 by Global Symbols with UNICEF ECARO
+
+photo transparent clear outline symbols Full List of AAC Symbol Design Guidelines Sample rules to apply include:-
+
+Symbol size tend to be 500 x 500 pixels (use points for measuring unit options) with contrasting colours.
+Outlines of faces, bodies, and objects are 2 to 7 points (depending on the size of the character in the image)
+Keep vector files consistent. The best format for adaptations is .svg with transparent backgrounds, but offer an alternative such as a .png so that jpgs and pdfs can be made for printouts of any size.
+different symbols for happy Thanks to Sclera, Drops (The Dynamic and Resizable Open Picture Symbols), ARASAAC, Metacom, Mulberry and PCS, Widget, SymbolStix to see a comparison of the sets
+
+Think about the audience – visual acuity and dexterity skills as well as perception (understanding) plus age, location, culture, religion and social settings.
+
+Real object associated with an activity – then a representation
+Photographs and pictures (normally from around 1 year onwards)
+Symbol representations (normally from around 3 years onwards)
+large to small mug with different backgrounds
+
+4e. Examples of Symbol Design and Content
+Updated 28 April 2022 by Global Symbols with UNICEF ECARO
+
+complex symbols
+
+Content of symbols – consider complexity and use e.g. Photos with symbols, Visual Scene Displays or for activities, different tenses and number.
+Distraction or attraction?
+Symbol isolation and understanding?
+All these issues will depend in the AAC user and the setting. black and white symbol
+
+Black and white / high contrast mode for visual impairments, use on posters and other settings. letters in a symbol
+
+Text within the image? Possibly use a ‘faux’ word so it works for any language faux word
+
+When summarising the ideas around the design of symbol sets and individual symbols think about:
+
+Adaptability: Being aware that users will be making symbol labels on the communication chart that may not be the same as the symbol file name or designed referent (what it relates to). Remember User ability, localisation and globalisation.
+Personalisation: Making symbols that can have changed outlines, colours and add additional elements to suit user, language, culture, settings etc.
+Polysemy: Symbols can have many meanings and one concept can have many symbols
+Learnability: a symbol’s relationship to its label or concept (referent) can be guessed or is easy to learn.
+Environment: Consider those interacting with the AAC user in all settings and for all tasks.
+
+Design for flexible and adaptable symbol-based AAC
+Jurica Dolic
+
+University of Zagreb, Faculty of Graphic Arts
+
+SHARE
+AAC in the time of the mobile devices
+With the advent of thin consumer tablets and contemporary mobile devices in general, many specialists in the domain of Augmentative and Alternative Communication (AAC) saw the their potential use for symbol-based AAC as a alternative to often clunky, expensive and restrictive dedicated AAC systems. In a relatively short period, many AAC solutions have emerged. But, with their design, some of them disregard the variations in devices screen sizes and difference in it’s users’ abilities, which can result in restriction of access instead of it’s promotion. And it’s not just the interfaces of the tablet-based AAC systems. In many cases, the symbol sets present in the application differ from the familiar symbol set the user uses. The symbol set designs also restrict access. Some symbols use images that aren’t part of the user’s culture and don’t take into account the specific requirement of the user’s language. Many of the popular symbol sets are designed way before the “mobile revolution” and don’t utilize technological advancements like high-resolution screens and support for the display of vector image formats. Also, many of the symbol sets have only one visual variant, forcing user’s with different needs and abilities to use a different set, making the communication between AAC users harder.
+
+Although this case study is most relevant to the graphic designers, user interface designers, user experience designers and developers of symbol-based AAC systems, it could provide useful information to other stakeholders who are involved in creation and preparation of visual AAC aids.
+
+
+Image 1. Visual adaptations of the proposed AAC symbol system
+
+
+Adaptable AAC symbols and user interfaces
+Our task was to design a several AAC applications for Croatian users. Considering the needs of Croatian AAC users and stakeholders and the lack of AAC solutions on the market at the time, we have decided on developing an adaptable system of AAC symbols and GUI elements in the effort to make our AAC solutions accessible to wide range of different AAC users. Our adaptable symbol system consist of three different levels of visual complexity(standard, detailed and contrast) which are based on the same basic line construction, making the symbol adaptable to different user needs and preferences, and different means of reproduction, while retaining the recognizability. We further developed a method of visual categorization of symbol categories, which is based on the combination of shape and colour, but can be adapted to fit the user preferences.
+
+We wanted that the graphical user interfaces supports multiple device sizes, different user abilities and preferences.
+
+We wanted that the graphical user interfaces supports multiple device sizes, different user abilities and preferences. We have developed adaptations in layout of the GUI elements, their number and dimensions, and also the adaptations of the visual reproduction which is in accordance with the level of visual complexity, but can also support user personalization. The ability of the quick generation of prototypes and iterations during the design of the graphical user interfaces was important to discuss the solution and test them with the stakeholders. Although low and medium fidelity paper prototypes proved to be great for testing ideas and discussions within the design and development team, most of the testing and communication with the stakeholders required semi-functional or functional high-fidelity prototypes.
+
+
+Image 2. Proposed method of symbol categorization using frame shapes and colours
+
+Resources
+During our research, design,  development and testing of adaptable and adaptive symbol-based AAC interactive systems, we have established a set of guidelines which might be useful to creators of such AAC solutions and assets in improving usability and accessibility of such systems. We have separated the guidelines for designing graphical symbols.
+
+AAC symbol design guidelines:
+
+In symbol systems for AAC, it is desirable to use representations of those objects that are characteristic of the user’s environment and culture.
+The technological characteristics of symbol files for AAC should support the possibility of implementation within the Visual Scene Displays (eg. symbols should have version with transparent background)
+For multicolored and multi-shade AAC symbols it is necessary to clearly indicate the contours of the displayed figures by using lines with enough contrast
+Lines should be clearly defined when the symbol is reproduced in its smallest print size or displayed on the screen in the lowest planned resolution.
+For the consistency of visual representation, it is necessary to define a limited amount of different line thicknesses to be used for the line construction in the entire set of characters.
+When outlining objects on the symbol it is recommended to use a constant line thickness throughout, except for the extremities.
+Because of visual adaptation of AAC symbols, textures that are essential for recognizing meaning of the symbol should be indicated by lines.
+In the standard and contrast symbol adaptations, visual texture is used only if its use promotes recognition of the symbol/representation.
+In regard of level of symbol iconicity, always tend to use depictions which are highly transparent.
+For faster and more accurate recognition, it is advisable to display objects, subjects, and scenes in their canonical positions (from the point of view where their most prominent features are clearly visible).
+Monochrome representation of graphic characters should be offered for both contrast polarity (positive and negative monochrome versions).
+The contrast ratio between the image elements and the background of the sign should be 4.5: 1, calculated according to the WCAG guidelines, preferably 7: 1 for the contrast version of the symbols.
+Recognition and understanding of the symbols can be increased by animating the symbol.
+The technical execution of the symbol should support reproduction on a broad spectrum of print and digital media.
+To keep the sharpness of displaying symbols independently of their screen dimensions, they need to be generated using vector graphics and stored in a vector graphic file format
+The format of documents used to store graphic characters should be supported in all operating systems where the characters will be used.
+
+Image 3. Spatial adaptations of the symbol-based GUI
+
+ 
+
+Guideliness for the design of adaptive and adaptable Graphical user interfaces (GUI) for symbol-based AAC:
+
+Users need to have easy preparation, storage and access to pre-formulated messages.
+The design of GUI should be aimed at reducing the cognitive and motor loads of the user.
+The design of the GUI should be accessible and usable to users with a broad range of perceptive, cognitive and motor skills.
+GUI should also enable easy access to secondary users: to parents and caregivers of AAC users, speech and language therapists and other stakeholders in AAC communication process.
+The layout of symbols and commands within GUI should be adapted to the specifics of the language in which the user is communication.
+Easy implementation of user generated symbols should be enabled.
+For children, AAC users, in the early developmental age, it is advisable visualize the vocabulary through Visual scene displays
+Users should be provided with control of automatic system adaptations.
+Accessing GUI segments that are not intended for primary users, such as advanced application settings, should be limited by requiring timing or motor-specific precision actions to avoid accidental activation
+Moderate use of adaptive elements is recommended, especially for the spatial/layout adjustments of GUI elements. Particularly important is to avoid significant and frequent changes to the layout and positioning of toolbars and commands.
+It is recommended to initiate the process of personalization of the graphical user interface during the first launch of the application or service.
+It is recommended that the system actively monitors user performance and suggests more appropriate GUI settings on the basis of reported errors.
+Contrast ratio between text labels and background should be 4.5: 1, calculated according to WCAG guidelines, preferably 7: 1 for the contrasting degree of visual adjustment.
+If the GUI commands are presented as visual metaphors, they should be from a known environment to the user.
+It is necessary to clearly and unambiguously visualize what user interface elements the user can or may not interact with at the given time, and what interaction results can be expected.
+Moving through different symbol grids/boards and hierarchical structure of vocabulary needs to be accompanied by animation.
+Adaptations within GUI need to be accompanied by animation.
+Instead of color, highlighting a symbol selection should be performed by animating the size of the symbol (enlargement).
+Using animation in AAC interfaces should be moderate. It is not recommended to use more than one animated element at the same time, except for highlighting the correlation or when it comes to group modification of the elements on the screen.
+Commands or functional interaction elements intended for the AAC users shouldn’t be dependent solely on the text description.
+It is not recommended to use a cursive letters to display text elements in the user interface of the AAC service.
+The emphasis on textual elements in interfaces with visual adaptations should be made by contrast in the thickness or the size of the character, with the possibility of combining with emphasis by using colour.
+It is desirable to use devices whose resolution exceeds 286 ppi or angle resolution of the human eye at the normal viewing distance from the device.
+Adequate dimensions of the reproduction of symbols and all functional elements of the user interface should be provided with regard to the differences in dimensions and screen resolution on mobile devices.
+The minimum dimensions of active elements within a AAC user interface should form a 1×1 cm square on the screen of the device on which the interface is to be used. It is necessary to include the ability to change the size of the active elements to allow unobstructed access to motor impairment users.
+
+Image 4. Early design prototype of Komunikator+ app, made from paper and cardboard
+
+ 
+
+In regard of the tools to design symbols using vector graphics, although we have used Adobe Illustrator CC, which is considered one of the most widely used tools by professionals, there are more affordable solutions, such as Affinity designer, Sketch, or Inkscape, which is free.
+
+As for the design of the graphical user interface, it can be done in any of the aforementioned programs, but there are more specialized solutions, like Sketch, Figma and Adobe XD. Some of solutions, like Invision, enable simulating some of the functionalities without coding, which enables the design team to quickly setup and perform usability tests with the users.
